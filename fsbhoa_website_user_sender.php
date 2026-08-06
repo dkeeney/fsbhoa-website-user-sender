@@ -43,6 +43,7 @@ function fsbhoa_sender_deactivate() {
 // ========================================================================
 
 add_action( 'fsbhoa_daily_web_sync_event', 'fsbhoa_cron_web_sync' );
+add_action( 'fsbhoa_instant_web_sync_event', 'fsbhoa_cron_web_sync' );
 function fsbhoa_cron_web_sync() {
     $is_enabled = get_option( 'fsbhoa_sync_enabled', '0' );
     if ( $is_enabled !== '1' ) {
@@ -89,7 +90,7 @@ function fsbhoa_execute_core_web_sync() {
 
     $args = array(
         'body'    => wp_json_encode( $results ),
-        'timeout' => 45,
+        'timeout' => 300,
         'headers' => array(
             'Content-Type'     => 'application/json',
             'X-FSBHOA-API-KEY' => $api_key,
@@ -117,8 +118,12 @@ function fsbhoa_execute_core_web_sync() {
     $updated     = $summary['users_updated'] ?? 0;
     $deleted     = $summary['users_deleted'] ?? 0;
     $safe_caught = $summary['safe_mode_caught'] ?? [];
+    $errors      = $summary['errors'] ?? [];
 
     $result = "Processed $total. Created $created. Updated $updated. Deleted $deleted.";
+    if ( ! empty( $errors ) ) {
+    $result .= " | ERRORS: " . implode( ', ', $errors );
+}
 
     // If Safe Mode caught anyone, append their emails to the feedback message
     if ( ! empty( $safe_caught ) ) {
